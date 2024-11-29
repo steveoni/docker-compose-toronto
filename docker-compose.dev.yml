@@ -1,0 +1,87 @@
+version: "3"
+
+services:
+  ckan:
+    build:
+      context: ckan/
+      dockerfile: Dockerfile
+      args:
+        - TZ=${TZ}
+    env_file:
+      - .env
+    links:
+      - db
+      - solr
+      - redis
+      - datapusher
+   
+    ports:
+      - "0.0.0.0:5000:5000"
+    volumes:
+      - ./src:/srv/app/src_extensions
+      - ckan_storagecot:/var/lib/ckan
+    networks:
+      - ckan-network
+
+  datapusher:
+    container_name: datapusher-cot
+    build:
+      context: datapusher/
+    environment:
+      - TZ=US/Pacific
+      - DATAPUSHER_SSL_VERIFY=0
+      - DATAPUSHER_MAX_CONTENT_LENGTH=3221225472
+      - DATAPUSHER_CHUNK_SIZE=1048576
+      - DATAPUSHER_DOWNLOAD_TIMEOUT=3600
+    networks:
+      - ckan-network
+    # Install curl for testing purposes
+
+  db:
+    container_name: db-cot
+    env_file:
+      - .env
+    build:
+      context: postgresql/
+      args:
+        - DATASTORE_READONLY_PASSWORD=${DATASTORE_READONLY_PASSWORD}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    environment:
+      - DATASTORE_READONLY_PASSWORD=${DATASTORE_READONLY_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=ckan
+      - CKAN_DB_USER=ckan
+      - CKAN_DB_PASSWORD=ckan
+      - CKAN_DB=ckan
+      - POSTGRES_DB=ckan
+      - DATASTORE_DB=datastore
+      - DATASTORE_READONLY_USER=datastore_ro
+      - PGDATA=/var/lib/postgresql/data/db
+      - DATAPUSHER_PASSWORD=${DATAPUSHER_PASSWORD}
+    volumes:
+      - pg_datackancot:/var/lib/postgresql/data
+    networks:
+      - ckan-network
+
+  solr:
+    container_name: solr-cot
+    image: ckan/ckan-solr:2.9-solr9-vector
+    volumes:
+      - solr_datackancot:/var/solr
+    networks:
+      - ckan-network
+
+  redis:
+    container_name: redis-ckancot
+    image: redis:alpine
+    networks:
+      - ckan-network
+
+volumes:
+  ckan_storagecot:
+  pg_datackancot:
+  solr_datackancot:
+
+networks:
+  ckan-network:
+    driver: bridge

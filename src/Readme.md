@@ -1,0 +1,1 @@
+`ckanext-iotrans` and `ckan-customization-open-data-toronto` are git cloned into this directory.

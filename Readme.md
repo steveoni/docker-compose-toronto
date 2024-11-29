@@ -1,0 +1,1 @@
+to install `ckan-customization-open-data-toronto` and `ckanext-iotrans` git clone both into `/src` directory
